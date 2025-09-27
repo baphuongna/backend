@@ -1,0 +1,9 @@
+[build]
+command = "npm install && npm run build"
+
+[deploy]
+startCommand = "node server.js"
+
+[env]
+NODE_ENV = "production"
+PORT = "3000"

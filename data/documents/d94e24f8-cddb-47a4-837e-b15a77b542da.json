@@ -1,0 +1,10 @@
+{
+  "id": "d94e24f8-cddb-47a4-837e-b15a77b542da",
+  "title": "Welcome to Collaborative Editor",
+  "content": "<h1>Welcome to the HTML File Editor!</h1>\n<p>This is a <strong>collaborative</strong> rich text editor built with:</p>\n<ul>\n  <li>Vue.js 3 + TypeScript</li>\n  <li>Tiptap editor framework</li>\n  <li>Socket.io for real-time collaboration</li>\n  <li>Node.js + Express backend</li>\n</ul>\n<h2>Features</h2>\n<ul>\n  <li><strong>Real-time collaboration</strong> - Multiple users can edit simultaneously</li>\n  <li><strong>User presence</strong> - See who else is in the document</li>\n  <li><strong>Live cursors</strong> - See where other users are typing</li>\n  <li><strong>Version history</strong> - Track changes over time</li>\n  <li><strong>Export options</strong> - HTML, Markdown, Plain Text</li>\n</ul>\n<p><em>Start editing this document to see real-time collaboration in action!</em></p>",
+  "ownerId": "be52e8c0-cee6-413f-aea7-37790ee7d5b2",
+  "collaborators": [],
+  "createdAt": "2025-09-27T12:00:41.349Z",
+  "updatedAt": "2025-09-27T12:00:41.350Z",
+  "versions": []
+}
