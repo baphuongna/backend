@@ -786,8 +786,8 @@ io.on('connection', (socket) => {
       }
       await saveDocument(updatedDocument)
 
-      // Broadcast change to other users in the room
-      socket.to(documentId).emit('document-updated', {
+      // Broadcast change to all users in the room (including sender for confirmation)
+      io.to(documentId).emit('document-updated', {
         content,
         updatedBy: user.name,
         updatedAt: new Date()
@@ -805,6 +805,7 @@ io.on('connection', (socket) => {
       const { documentId, position, selection } = data
       const user = socket.data.user
 
+      // Broadcast to all users in room (except sender - they don't need to see their own cursor)
       socket.to(documentId).emit('cursor-updated', {
         userId: user.id,
         userName: user.name,
