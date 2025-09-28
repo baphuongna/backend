@@ -539,7 +539,7 @@ app.post('/api/documents/:id/collaborators', authenticateToken, (req, res) => {
     }
 
     // Find user by email
-    const collaborator = Array.from(users.values()).find(u => u.email === email)
+    const collaborator = Array.from(usersCache.values()).find(u => u.email === email)
     if (!collaborator) {
       return res.status(404).json({ error: 'User not found' })
     }
@@ -635,19 +635,22 @@ app.get('/api/documents', authenticateToken, (req, res) => {
 app.get('/api/auth/users', authenticateToken, (req, res) => {
   try {
     // Load all users from file system
-    const allUsers = loadAllUsers().map(user => ({
+    const allUsers = loadAllUsers()
+
+    // Update cache with full user objects
+    allUsers.forEach(user => {
+      usersCache.set(user.id, user)
+    })
+
+    // Return simplified user objects for client
+    const simplifiedUsers = allUsers.map(user => ({
       id: user.id,
       name: user.name,
       email: user.email,
       avatar: user.avatar
     }))
 
-    // Update cache
-    allUsers.forEach(user => {
-      usersCache.set(user.id, user)
-    })
-
-    res.json(allUsers)
+    res.json(simplifiedUsers)
   } catch (error) {
     console.error('Get users error:', error)
     res.status(500).json({ error: 'Internal server error' })
@@ -1149,29 +1152,30 @@ app.post('/api/storage/backup/:documentId', authenticateToken, (req, res) => {
   }
 })
 
-app.get('/api/storage/backups', authenticateToken, (req, res) => {
-  try {
-    const backups = listBackups()
-    res.json(backups)
-  } catch (error) {
-    console.error('List backups error:', error)
-    res.status(500).json({ error: 'Failed to list backups' })
-  }
-})
+// TODO: Implement backup functionality
+// app.get('/api/storage/backups', authenticateToken, (req, res) => {
+//   try {
+//     const backups = listBackups()
+//     res.json(backups)
+//   } catch (error) {
+//     console.error('List backups error:', error)
+//     res.status(500).json({ error: 'Failed to list backups' })
+//   }
+// })
 
-app.post('/api/storage/backups/cleanup', authenticateToken, (req, res) => {
-  try {
-    const { maxAge = 30 } = req.body
-    const deletedCount = cleanupOldBackups(maxAge)
-    res.json({
-      message: 'Cleanup completed',
-      deletedBackups: deletedCount
-    })
-  } catch (error) {
-    console.error('Cleanup backups error:', error)
-    res.status(500).json({ error: 'Failed to cleanup backups' })
-  }
-})
+// app.post('/api/storage/backups/cleanup', authenticateToken, (req, res) => {
+//   try {
+//     const { maxAge = 30 } = req.body
+//     const deletedCount = cleanupOldBackups(maxAge)
+//     res.json({
+//       message: 'Cleanup completed',
+//       deletedBackups: deletedCount
+//     })
+//   } catch (error) {
+//     console.error('Cleanup backups error:', error)
+//     res.status(500).json({ error: 'Failed to cleanup backups' })
+//   }
+// })
 
 // HTML file upload endpoint
 app.post('/api/upload/html', authenticateToken, upload.single('htmlFile'), (req, res) => {

@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify'
+import express from 'express'
 
 // Các HTML tags được cho phép để tránh XSS attacks
 export const ALLOWED_HTML_TAGS = [
@@ -109,17 +110,17 @@ export const sanitizeHTML = (html: string): string => {
 }
 
 // Validate file type and size
-export const validateHTMLFile = (file: File): { isValid: boolean; error?: string } => {
+export const validateHTMLFile = (file: Express.Multer.File): { isValid: boolean; error?: string } => {
   // Check file extension first (more reliable than MIME type)
   const validExtensions = ['.html', '.htm']
-  const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+  const fileExtension = file.originalname.toLowerCase().substring(file.originalname.lastIndexOf('.'))
   if (!validExtensions.includes(fileExtension)) {
     return { isValid: false, error: 'Định dạng file không hợp lệ. Chỉ chấp nhận .html và .htm' }
   }
 
   // Check file type (more lenient - accept HTML-like types or text types)
   const validMimeTypes = ['text/html', 'application/html', 'text/plain']
-  if (file.type && !validMimeTypes.some(type => file.type.includes(type))) {
+  if (file.mimetype && !validMimeTypes.some(type => file.mimetype.includes(type))) {
     return { isValid: false, error: 'Loại file không được hỗ trợ' }
   }
 
@@ -130,7 +131,7 @@ export const validateHTMLFile = (file: File): { isValid: boolean; error?: string
   }
 
   // Check file name for security
-  const fileName = file.name.toLowerCase()
+  const fileName = file.originalname.toLowerCase()
   const suspiciousPatterns = [
     /\.\./, // Directory traversal
     /\//, // Path separator
@@ -188,7 +189,7 @@ export const cleanHTMLForEditor = (html: string): string => {
 }
 
 // Parse HTML file and return sanitized content
-export const parseHTMLFile = async (file: File): Promise<{
+export const parseHTMLFile = async (file: Express.Multer.File): Promise<{
   content: string
   title: string
   description: string
@@ -206,12 +207,16 @@ export const parseHTMLFile = async (file: File): Promise<{
   }
 
   try {
-    // Read file content
+    // Read file content using Node.js fs
     const htmlContent = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = (e) => resolve(e.target?.result as string)
-      reader.onerror = () => reject(new Error('Không thể đọc file'))
-      reader.readAsText(file)
+      const fs = require('fs')
+      fs.readFile(file.path, 'utf8', (err: Error | null, data: string) => {
+        if (err) {
+          reject(new Error('Không thể đọc file'))
+        } else {
+          resolve(data)
+        }
+      })
     })
 
     // Extract metadata

@@ -18,7 +18,8 @@
     "socket.io": "^4.8.1",
     "multer": "^1.4.5-lts.1",
     "yjs": "^13.6.27",
-    "y-websocket": "^3.0.0"
+    "y-websocket": "^3.0.0",
+    "dompurify": "^3.1.6"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
@@ -27,6 +28,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/uuid": "^10.0.0",
     "@types/multer": "^1.4.11",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^22.16.5",
     "tsx": "^4.20.5",
     "typescript": "~5.8.0",
