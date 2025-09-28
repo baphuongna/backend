@@ -9,6 +9,7 @@ import * as Y from 'yjs'
 import * as fs from 'fs'
 import * as path from 'path'
 import multer from 'multer'
+import mammoth from 'mammoth'
 import {
   initializeStorage,
   saveUser,
@@ -59,6 +60,23 @@ const upload = multer({
       cb(null, true)
     } else {
       cb(new Error('Only HTML files are allowed'))
+    }
+  }
+})
+
+// Configure multer for Word document uploads
+const uploadWord = multer({
+  dest: 'uploads/',
+  limits: {
+    fileSize: 15 * 1024 * 1024 // 15MB limit for Word documents
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept Word documents
+    if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        file.originalname.toLowerCase().endsWith('.docx')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only Word documents (.docx) are allowed'))
     }
   }
 })
@@ -1229,6 +1247,76 @@ app.post('/api/upload/html', authenticateToken, upload.single('htmlFile'), (req,
     }
 
     res.status(500).json({ error: 'Failed to process HTML file' })
+  }
+})
+
+// Word document upload endpoint
+app.post('/api/upload/word', authenticateToken, uploadWord.single('wordFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' })
+    }
+
+    const user = req.user as any
+
+    // Read the uploaded Word document
+    const filePath = req.file.path
+    const buffer = fs.readFileSync(filePath)
+
+    // Clean up the uploaded file
+    fs.unlinkSync(filePath)
+
+    // Convert Word document to HTML using mammoth.js
+    const result = await mammoth.convertToHtml({ buffer: buffer })
+
+    // Get the converted HTML
+    let htmlContent = result.value
+
+    // Sanitize and clean the HTML content
+    const sanitizedHTML = sanitizeHTML(htmlContent)
+    const cleanedHTML = cleanHTMLForEditor(sanitizedHTML)
+
+    // Extract title from original filename if no title in document
+    const title = extractTitle(htmlContent) || req.file.originalname.replace('.docx', '')
+
+    // Log conversion warnings if any
+    if (result.messages.length > 0) {
+      console.log('Word conversion warnings:', result.messages)
+    }
+
+    // Return the converted HTML
+    res.json({
+      content: cleanedHTML,
+      title: title,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      converted: true,
+      warnings: result.messages,
+      timestamp: new Date().toISOString()
+    })
+
+  } catch (error) {
+    console.error('Word upload error:', error)
+
+    // Clean up uploaded file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path)
+    }
+
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Maximum size is 15MB.' })
+      }
+      return res.status(400).json({ error: 'File upload error: ' + error.message })
+    }
+
+    // Handle mammoth specific errors
+    if (error.message && error.message.includes('Could not open file')) {
+      return res.status(400).json({ error: 'Invalid Word document format' })
+    }
+
+    res.status(500).json({ error: 'Failed to process Word document' })
   }
 })
 
